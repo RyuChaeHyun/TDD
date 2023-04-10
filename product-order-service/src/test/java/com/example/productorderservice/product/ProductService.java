@@ -1,28 +1,35 @@
 package com.example.productorderservice.product;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.example.productorderservice.ApiTest;
+import io.restassured.RestAssured;
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 
-//생성자 주입 final 사용 이유
-//값의 불변을 보장할 수 있음
-//생성자를 통해 의존성을 설정하고 변경할 일이 없으므로 final으로 안전하게 불변을 보장할 수 있음
-class ProductServiceTest {
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-    private ProductService productService;
-    private ProductPort productPort;
-    private ProductRepository productRepository;
+class ProductApiTest extends ApiTest {
 
-    @BeforeEach
-    void setUp() {
-        productRepository = new ProductRepository();
-        productPort = new ProductAdapter(productRepository);
-        productService = new ProductService(productPort);
-    }
+    //스프링 부트 테스트
+//    @Autowired
+//    private ProductService productService;
+//
+//    @Test
+//    void 상품등록() {
+//        final AddProductRequest request = 상품등록요청_생성();
+//        productService.addProduct(request);
+//    }
 
     @Test
     void 상품등록() {
-        final AddProductRequest request = 상품등록요청_생성();
-        productService.addProduct(request);
+        final var request = 상품등록요청_생성();
+        //API 요청
+        final var response = 상품등록요청(request);
+
+        assertThat(response.statusCode()).isEqualTo(HttpStatus.CREATED.value());
     }
 
     private static AddProductRequest 상품등록요청_생성() {
@@ -32,6 +39,17 @@ class ProductServiceTest {
         return new AddProductRequest("상품명", 1000, DiscountPolicy.NONE);
     }
 
+    private static ExtractableResponse<Response> 상품등록요청(AddProductRequest request) {
+        //given().log().all() : 요청을 보내는 로그를 남기겠다
+        final ExtractableResponse<Response> response = RestAssured.given().log().all()
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .body(request)
+                .when()
+                .post("/products")
+                .then()
+                .log().all().extract();
+        return response;
+    }
 }
 
 
